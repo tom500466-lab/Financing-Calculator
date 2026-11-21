@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>信用戶達到 130% 目標維持率 — 客戶應補自備款自動試算表</title>
+  <style>
+    :root {
+      --navy: #1b4370;
+      --navy-light: #26568c;
+      --input-bg: #fff5cc;
+      --highlight-bg: #e2f0d9;
+      --highlight-text: #c00000;
+      --border-color: #d0d7de;
+      --text-main: #1f2328;
+      --text-muted: #57606a;
+      --bg-page: #f6f8fa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      margin: 0;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      padding-bottom: 28px;
+    }
+
+    .main-header {
+      background-color: var(--navy);
+      color: #ffffff;
+      text-align: center;
+      padding: 18px 20px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 24px 0;
+    }
+
+    .btn {
+      padding: 7px 14px;
+      border-radius: 5px;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn:hover {
+      background: #f0f3f6;
+    }
+
+    .btn-primary {
+      background: var(--navy);
+      color: #ffffff;
+      border-color: var(--navy);
+    }
+
+    .btn-primary:hover {
+      background: var(--navy-light);
+    }
+
+    .btn-danger {
+      color: #c00000;
+      border-color: #f3c6c6;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn-danger:hover {
+      background: #fff0f0;
+    }
+
+    .section {
+      padding: 18px 24px 6px;
+    }
+
+    .section-title {
+      color: var(--navy);
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+    }
+
+    th {
+      background-color: var(--navy);
+      color: #ffffff;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    td.center {
+      text-align: center;
+    }
+
+    .input-cell {
+      background-color: var(--input-bg);
+      padding: 4px 6px;
+    }
+
+    .input-cell input {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      text-align: right;
+      padding: 4px 6px;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    .input-cell input.text-left {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .input-cell input:focus {
+      background: #ffffff;
+      border-color: var(--navy);
+    }
+
+    .highlight-cell {
+      background-color: var(--highlight-bg);
+      color: var(--highlight-text);
+      font-weight: 700;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bold-num {
+      font-weight: 700;
+    }
+
+    .baseline-table {
+      max-width: 460px;
+    }
+
+    .baseline-table td:first-child {
+      width: 58%;
+      background-color: #fafbfc;
+      font-weight: 500;
+    }
+
+    .formula-text {
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .note {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 10px;
+      }
+      .section {
+        padding: 14px 12px 4px;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="main-header">
+      信用戶達到 130% 目標維持率 — 客戶應補自備款自動試算表 (v3 正式修正版)
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" onclick="resetDefaults()">重置預設值</button>
+      <button class="btn btn-primary" onclick="addRow()">+ 新增標的</button>
+    </div>
+
+    <!-- 一、帳戶現況基準 -->
+    <div class="section">
+      <div class="section-title">一、帳戶現況基準（黃底欄位可自行修改）</div>
+      <table class="baseline-table">
+        <tbody>
+          <tr>
+            <td>目前擔保品總市值 (M)</td>
+            <td class="input-cell">
+              <input type="number" id="collateralM" value="32924000" step="1000" oninput="recalculateAll()" />
+            </td>
+          </tr>
+          <tr>
+            <td>目前整戶維持率</td>
+            <td class="num bold-num" id="currentRatio">119.35%</td>
+          </tr>
+          <tr>
+            <td>融資借款總額 (L)</td>
+            <td class="input-cell">
+              <input type="number" id="loanL" value="27586091" step="1000" oninput="recalculateAll()" />
+            </td>
+          </tr>
+          <tr>
+            <td>目標整戶維持率 (%)</td>
+            <td class="input-cell">
+              <input type="number" id="targetRatio" value="130.00" step="1" min="100" oninput="recalculateAll()" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 二、融資買進新標的 -->
+    <div class="section">
+      <div class="section-title">二、融資買進新標的 — 自動試算客戶應補自備款（依自備成數精確計算現金）</div>
+      <table>
+        <thead>
+          <tr>
+            <th>標的名稱</th>
+            <th>標的股價</th>
+            <th>融資成數 (%)</th>
+            <th>自備款成數</th>
+            <th>可買進總市值</th>
+            <th>客戶應補自備款</th>
+            <th>需買進張數</th>
+            <th>需買進股數</th>
+            <th>買後整戶維持率</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="stockTableBody"></tbody>
+      </table>
+      <div class="note">
+        註：需買進股數與張數採無條件進位（1張 = 1,000股）；買後整戶維持率依實際買進整張數計算。
+      </div>
+    </div>
+
+    <!-- 三、最省資金替代方案 -->
+    <div class="section">
+      <div class="section-title">三、最省資金替代方案（不買股票，直接還借款或補保證金）</div>
+      <table>
+        <thead>
+          <tr>
+            <th>處理方式</th>
+            <th>運作機制</th>
+            <th>計算公式</th>
+            <th>客戶應備現金 (元)</th>
+            <th>達到後維持率</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bold-num">融資現金償還（最省錢）</td>
+            <td>直接還掉借款本金，融資分母減少</td>
+            <td class="formula-text">L - (M ÷ 目標維持率)</td>
+            <td class="highlight-cell" id="repayCash">2,259,938</td>
+            <td class="num bold-num" id="repayRatio">130.00%</td>
+          </tr>
+          <tr>
+            <td class="bold-num">存入保證金 / 現金抵繳</td>
+            <td>現金存入信用戶充當擔保，分子增加</td>
+            <td class="formula-text">(L × 目標維持率) - M</td>
+            <td class="highlight-cell" id="depositCash">2,937,919</td>
+            <td class="num bold-num" id="depositRatio">130.00%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_STOCKS = [
+      { name: "光洋科(資6成)", price: 69.4, marginPct: 60.0 },
+      { name: "德律(資6成)", price: 184.0, marginPct: 60.0 },
+      { name: "營邦（資6成）", price: 434.0, marginPct: 60.0 },
+      { name: "test1（資5成）", price: 1.0, marginPct: 50.0 }
+    ];
+
+    let stocks = JSON.parse(JSON.stringify(DEFAULT_STOCKS));
+
+    function formatInt(num) {
+      if (!isFinite(num)) return "-";
+      return Math.round(num).toLocaleString("zh-TW");
+    }
+
+    function formatPct(val) {
+      if (!isFinite(val)) return "-";
+      return (val * 100).toFixed(2) + "%";
+    }
+
+    function renderRows() {
+      const tbody = document.getElementById("stockTableBody");
+      tbody.innerHTML = "";
+      stocks.forEach((item, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="input-cell">
+            <input type="text" class="text-left" value="${escapeHtml(item.name)}" oninput="updateStock(${idx}, 'name', this.value)" />
+          </td>
+          <td class="input-cell">
+            <input type="number" value="${item.price}" step="0.1" min="0.01" oninput="updateStock(${idx}, 'price', this.value)" />
+          </td>
+          <td class="input-cell">
+            <input type="number" value="${item.marginPct}" step="5" min="0" max="90" oninput="updateStock(${idx}, 'marginPct', this.value)" />
+          </td>
+          <td class="num" id="selfPct-${idx}"></td>
+          <td class="num" id="buyVal-${idx}"></td>
+          <td class="highlight-cell" id="selfCash-${idx}"></td>
+          <td class="num bold-num" id="lots-${idx}"></td>
+          <td class="num" id="shares-${idx}"></td>
+          <td class="num bold-num" id="afterRatio-${idx}"></td>
+          <td class="center">
+            <button class="btn btn-danger" onclick="removeRow(${idx})">刪除</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      recalculateAll();
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function updateStock(idx, field, value) {
+      if (field === "name") {
+        stocks[idx].name = value;
+      } else {
+        stocks[idx][field] = parseFloat(value) || 0;
+        recalculateAll();
+      }
+    }
+
+    function addRow() {
+      stocks.push({ name: "新標的(資6成)", price: 50.0, marginPct: 60.0 });
+      renderRows();
+    }
+
+    function removeRow(idx) {
+      stocks.splice(idx, 1);
+      renderRows();
+    }
+
+    function resetDefaults() {
+      document.getElementById("collateralM").value = 32924000;
+      document.getElementById("loanL").value = 27586091;
+      document.getElementById("targetRatio").value = 130.00;
+      stocks = JSON.parse(JSON.stringify(DEFAULT_STOCKS));
+      renderRows();
+    }
+
+    function recalculateAll() {
+      const M = parseFloat(document.getElementById("collateralM").value) || 0;
+      const L = parseFloat(document.getElementById("loanL").value) || 0;
+      const R_target = (parseFloat(document.getElementById("targetRatio").value) || 0) / 100;
+
+      const currentR = L > 0 ? M / L : 0;
+      document.getElementById("currentRatio").textContent = formatPct(currentR);
+
+      // 缺口 = (L * R_target) - M
+      const shortfall = Math.max(0, L * R_target - M);
+
+      // 方案一：融資現金償還
+      const repayNeed = R_target > 0 ? Math.max(0, Math.ceil(L - M / R_target)) : 0;
+      const repayAfterR = (L - repayNeed) > 0 ? M / (L - repayNeed) : 0;
+      document.getElementById("repayCash").textContent = formatInt(repayNeed);
+      document.getElementById("repayRatio").textContent = formatPct(repayAfterR);
+
+      // 方案二：存入保證金
+      const depositNeed = Math.ceil(shortfall);
+      const depositAfterR = L > 0 ? (M + depositNeed) / L : 0;
+      document.getElementById("depositCash").textContent = formatInt(depositNeed);
+      document.getElementById("depositRatio").textContent = formatPct(depositAfterR);
+
+      // 買進新標的試算
+      stocks.forEach((item, idx) => {
+        const m = (item.marginPct || 0) / 100;
+        const d = 1 - m;
+        const P = item.price || 0;
+
+        document.getElementById(`selfPct-${idx}`).textContent = (d * 100).toFixed(1) + "%";
+
+        const denom = 1 - R_target * m;
+        if (denom <= 0 || shortfall <= 0 || P <= 0) {
+          document.getElementById(`buyVal-${idx}`).textContent = shortfall <= 0 ? "0" : "無法達標";
+          document.getElementById(`selfCash-${idx}`).textContent = shortfall <= 0 ? "0" : "-";
+          document.getElementById(`lots-${idx}`).textContent = shortfall <= 0 ? "0" : "-";
+          document.getElementById(`shares-${idx}`).textContent = shortfall <= 0 ? "0" : "-";
+          document.getElementById(`afterRatio-${idx}`).textContent = formatPct(currentR);
+          return;
+        }
+
+        const buyVal = Math.ceil(shortfall) / denom;
+        const selfCash = buyVal * d;
+        const shares = Math.ceil(buyVal / P);
+        const lots = Math.ceil(shares / 1000);
+
+        const actualBuyVal = lots * 1000 * P;
+        const afterRatio = (M + actualBuyVal) / (L + m * actualBuyVal);
+
+        document.getElementById(`buyVal-${idx}`).textContent = formatInt(buyVal);
+        document.getElementById(`selfCash-${idx}`).textContent = formatInt(selfCash);
+        document.getElementById(`lots-${idx}`).textContent = formatInt(lots);
+        document.getElementById(`shares-${idx}`).textContent = formatInt(shares);
+        document.getElementById(`afterRatio-${idx}`).textContent = formatPct(afterRatio);
+      });
+    }
+
+    renderRows();
+  </script>
+</body>
+</html>
